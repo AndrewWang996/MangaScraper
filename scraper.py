@@ -82,7 +82,7 @@ def scrapeSeries(seriesURL):
  	chapterURLs = chapterURLs[::-1]
 
  	for i in range(len(chapterURLs)):
- 		print '%s Chapter %i' %(seriesTitle, i+1)
+ 		print '%s Chapter %i Downloading...' %(seriesTitle, i+1)
  		chapterURL = chapterURLs[i]
  		scrapeChapter(chapterURL)
 
