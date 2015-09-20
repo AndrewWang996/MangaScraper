@@ -1,6 +1,7 @@
 
 import urllib, urllib2, re
 from bs4 import BeautifulSoup
+import os
 
 def getSeriesTitle(chapterOrSeriesURL):
 	'''
@@ -12,25 +13,39 @@ def getSeriesTitle(chapterOrSeriesURL):
 	seriesTitle = remainingString.split('/')[0]
 	return seriesTitle
 
-
+def getChapterNumber(chapterURL):
+	'''
+	gets chapter number from KissManga chapter URL
+	'''
+	pass
 
 def scrapeChapter(chapterURL):
 	'''
 	scrapes an entire chapter from the given URL of the KissManga domain
 	downloads as multiple png's
 	'''
+	print chapterURL
+
 	opener = urllib2.build_opener()
 	opener.addheaders = [('User-agent', 'Mozilla/5.0')]
-
-
 	source = opener.open(chapterURL).read()
 
+	seriesTitle = getSeriesTitle(chapterURL)
 
+	OSCommands = [
+		"rm Images/*",
+		"mkdir %s" %(seriesTitle)
+	]
+
+	for command in OSCommands:
+		os.system(command)
+
+	prefixJavascript = 'lstImages.push("'
+	escapedPrefixJavascript = 'lstImages.push\("'
 	## example link:
 	## http://2.bp.blogspot.com/-ANiS2T94Sdg/VfF1NJY6kEI/AAAAAAAC2qw/nVbQGfhTVbI/s16000-Ic42/000.png
-	for link in re.findall('http://.*[0-9][0-9][0-9].png', source):
-	    cleanLink = link
-
+	for link in re.findall(escapedPrefixJavascript + '.*', source):
+	    cleanLink = link.replace(prefixJavascript, '').replace('");','')
 
 	    ## the code above just prints the link;
 	    ## if you want to actually download, set the flag below to True
@@ -38,10 +53,18 @@ def scrapeChapter(chapterURL):
 	    actually_download = True
 	    if actually_download:
 	        filename = cleanLink.split('/')[-1]
-	        urllib.urlretrieve(cleanLink, 'Images/' + filename)
+	        urllib.urlretrieve(cleanLink, 'Images/%s' %filename)
+
+	OSCommands = [
+		"convert Images/* %s/%sChapter.pdf" %(seriesTitle, seriesTitle),
+		"rm Images/*"
+	]
+	for command in OSCommands:
+		os.system(command)
 
 def scrapeSeries(seriesURL):
 	'''
+	Example HTML Element that contains the chapters
 	<a href="/Manga/Uzumaki/Uzumaki-Chapter-2?id=56786" title="Read Uzumaki Uzumaki Chapter 002 online">Uzumaki Chapter 002</a>
 	'''
 	opener = urllib2.build_opener()
@@ -56,11 +79,20 @@ def scrapeSeries(seriesURL):
 
  	chapterPrefixString = 'http://kissmanga.com'
  	chapterURLs = [chapterPrefixString + line for line in chapterRelativeURLs]
+ 	chapterURLs = chapterURLs[::-1]
 
- 	for chapterURL in chapterURLs:
+ 	for i in range(len(chapterURLs)):
+ 		print '%s Chapter %i' %(seriesTitle, i+1)
+ 		chapterURL = chapterURLs[i]
  		scrapeChapter(chapterURL)
-	# TODO finish this method
 
+ 		OSCommands = [
+ 			"mv %s/%sChapter.pdf %s/%sChapter%s.pdf" %(seriesTitle, seriesTitle, seriesTitle, seriesTitle, str(i+1).zfill(4))
+		]
+		for command in OSCommands:
+			os.system(command)
+ 	
+# scrapeChapter('http://kissmanga.com/Manga/Uzumaki/Uzumaki-Chapter-1?id=56778')
 scrapeSeries('http://kissmanga.com/Manga/Uzumaki')
 # scrapeChapter('http://kissmanga.com/Manga/Toriko/Ch-338--Joa-VS-Midora--?id=241108')
 
